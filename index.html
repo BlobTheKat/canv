@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+	<meta name="theme-color" content="#000">
+	<style>
+		*{box-sizing: border-box}
+		html{
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			user-select: none;
+			overflow: hidden;
+			touch-action: none;
+			width: 100%;
+			height: 100%;
+		}
+		body{
+			margin: 0;
+			font-family: monospace;
+			font-size: 16px;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: #000;
+			color: white;
+		}
+		ui{
+			display: block;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 1;
+		}
+		debug{
+			position: fixed;
+			top: 0;left: 0;
+			text-align: right;
+			color: #fff;
+			display: block;
+			z-index: 10;
+			width: 0;
+			overflow: visible;
+		}
+		canvas{
+			image-rendering: optimizeSpeed;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: pixelated;
+			image-rendering: optimize-contrast;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			z-index: 1;
+			animation: var(--anim);
+		}
+		btn{
+			-webkit-tap-highlight-color: transparent;
+			display: block;
+			cursor: pointer;
+		}
+		#out, #in{
+			position: absolute;
+			right: 20px;
+			width: 60px;
+			height: 60px;
+			background: #444;
+			color: #ccc;
+			line-height: 60px;
+			text-align: center;
+			font-size: 30px;
+			font-weight: bold;
+			border-radius: 30px;
+			box-shadow: 0 0 15px black;
+		}
+		#out.active, #in.active{
+			background: #333;
+		}
+		#in{
+			bottom: 100px;
+		}
+		#out{
+			bottom: 20px;
+		}
+		#crossa, #crossb{
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 2px;
+			height: 2px;
+			background: rgba(120,120,120,0.4);
+			z-index: -1;
+		}
+		#crossa{
+			height: 20px;
+			margin: -10px 0 0 -1px;
+		}
+		#crossb{
+			width: 20px;
+			margin: -1px 0 0 -10px;
+		}
+		#colbar{
+			width: 444px;
+			background: #444;
+			height: 48px;
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			display: flex;
+			justify-content: space-evenly;
+			align-items: center;
+			box-shadow: 0 0 15px black;
+			outline: 2px solid #888;
+		}
+		#colbar div{
+			width: var(--w);
+			height: var(--w);
+			box-shadow: 0 0 5px black;
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+		}
+		#colbar div p{
+			margin: 0;
+			background: inherit;
+			background-clip: text;
+			-webkit-background-clip: text;
+			color: transparent;
+			filter: invert(1) grayscale(1) contrast(10);
+		}
+		ui{
+			--w: 40px;
+		}
+		#colselector{
+			outline: 2px solid #888;
+			background: #444;
+			position: absolute;
+			width: 356px;
+			left: 88px;
+			bottom: 56px;
+			max-height: calc(100% - 60px);
+			overflow: auto;
+			padding: 4px;
+			flex-wrap: wrap;
+			gap: 4px;
+			justify-content: center;
+		}
+		#colselector div{
+			width: var(--w);
+			height: var(--w);
+			box-shadow: 0 0 5px black;
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+		}
+		@media (max-width: 540px){
+			#colbar{
+				width: 100vw;
+				height: calc(14.2857vw + 4px)
+			}
+			.nm{display: none}
+			ui{
+				--w: calc(14.2857vw - 4px);
+			}
+			#in{bottom: calc(18vw + 80px)}
+			#out{bottom: 18vw}
+			#colselector{
+				bottom: calc(14.2857vw + 12px);
+				z-index: 1;
+				width: 100%;
+				left: 0;
+				--w: calc(12.5vw - 4.5px);
+			}
+		}
+		#ip{
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: #111;
+			z-index: 11;
+		}
+		input{
+			background: transparent;
+			color: white;
+			border: none;
+			border-bottom: 3px #ccc solid;
+			outline: none;
+			border-radius: 0;
+			font-size: 16px;
+			font-family: monospace;
+			padding: 3px;
+		}
+		div.server{
+			max-width: 400px;
+			text-align: center;
+			margin: auto;
+			margin-top: 10px;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body ontouchstart="event.preventDefault()" ontouchend="event.target.click()">
+	<debug></debug>
+	<canvas></canvas>
+	<ui>
+		<div style="position:absolute;top: 45%;text-align: center;font-size: 2rem;width:100%" id="conn">Connecting...</div>
+		<div id="colselector" style="display:none" onclick="let i = [...this.children].indexOf(event.target);usecol((i&7)|((i&8)<<1)|((i&16)<<1)|((i&32)>>2))">
+		</div>
+		<div id="colbar">
+			<div onclick="selectcol(0)"><p>1</p></div>
+			<div onclick="selectcol(1)"><p>2</p></div>
+			<div onclick="selectcol(2)"><p>3</p></div>
+			<div onclick="selectcol(3)"><p>4</p></div>
+			<div onclick="selectcol(4)"><p>5</p></div>
+			<div onclick="selectcol(5)"><p>6</p></div>
+			<div onclick="selectcol(6)" class="nm"><p>7</p></div>
+			<div onclick="selectcol(7)" class="nm"><p>8</p></div>
+			<div onclick="selectcol(8)" class="nm"><p>9</p></div>
+			<div style="text-align: center;color:white;line-height:var(--w);box-shadow:none" onclick="let el=document.getElementById('colselector');el.style.display=el.style.display=='none'?'flex':'none'">...</div>
+		</div>
+		<div id="crossa"></div>
+		<div id="crossb"></div>
+		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
+		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
+	</ui>
+	<div id="ip" style="display:none;padding-top: calc(70vh - 300px);">
+		<h1 style="text-align:center">Enter IP:</h1>
+		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');ws = new WebSocket('ws://'+this.value+':1292');wsinit()}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
+	</div>
+</body>
+<script>module={exports:{}}</script>
+<script src="https://unpkg.com/buf.js/index.js"></script>
+<script>
+document.querySelectorAll('[active]').forEach(function(el){
+	el.ontouchstart=()=>el.classList.add('active')
+	el.ontouchend=()=>el.classList.remove('active')
+	el.ontouchcancel=()=>el.classList.remove('active')
+	el.onmousedown=()=>el.classList.add('active')
+	el.onmouseup=()=>el.classList.remove('active')
+	el.onmouseleave=()=>el.classList.remove('active')
+})
+Object.assign(window,module.exports);
+let [dnode, canvas, ui] = document.body.children
+const BLK = 1
+const BLK2 = BLK * 2
+const BLK4 = BLK2 * 2
+const CHUNKS = 3
+let cx = 0, cy = 0
+let rx = 0, ry = 0
+let chx = 0
+let chy = 0
+let map = new Map()
+class Chunk extends Uint8Array{
+	static VOID = new Chunk()
+	constructor(data){
+		if(data && data.byteLength == 4096){
+			super(data.buffer)
+		}else{
+			super(4096)
+		}
+		this.ref = new Set()
+	}
+	setcell(x, y, cell){
+		this[(y<<6) + (x&63)] = cell
+	}
+	getcell(x, y){
+		return this[(y<<6) + (x&63)]
+	}
+}
+function move(x, y){
+	let data = new BufWriter()
+	data.byte(2)
+	data.int(x)
+	data.int(y)
+	send(data.toBuf())
+}
+function chunk(x, y){
+	let i = new Float64Array(new Uint32Array([x&0x3FFFFFF,y&0x3FFFFFF]).buffer)[0]
+	return map.get(i) || Chunk.VOID
+}
+function get(x, y){
+	let i = new Float64Array(new Uint32Array([x>>>6,y>>>6]).buffer)[0]
+	let r = map.get(i)
+	if(!r)return 0
+	return r[((y&63)<<6)+(x&63)]
+}
+let _NULL = {}
+function set(x, y, b){
+	let i = new Float64Array(new Uint32Array([x>>>6,y>>>6]).buffer)[0]
+	let r = map.get(i)
+	x |= 0
+	y |= 0
+	let xt = x&63
+	let yt = y&63
+	let pos = (yt<<6)+xt
+	if(!r)return 0
+	draws.push([x, y, b])
+	let ob = r[pos]
+	if(b==_NULL)b = ob
+	r[pos] = b
+	let ccx = (x - rx) * BLK + canvas.width / 2
+	let ccy = (ry - y) * BLK + canvas.height / 2 - BLK
+	if(ccx<0||ccy<0||ccx>=canvas.width||ccy>=canvas.height)return ob
+	drawblock(x, y, ccx, ccy, r)
+	return ob
+}
+function drawchunk(x, y, c = chunk(x, y)){
+	x |= 0
+	y |= 0
+	let ccx0 = (x * 64 - rx) * BLK + canvas.width / 2
+	let ccy0 = (ry - y * 64 - 63) * BLK + canvas.height / 2 - BLK
+	let ccx1 = (x * 64 + 63 - rx) * BLK + canvas.width / 2
+	let ccy1 = (ry - y * 64) * BLK + canvas.height / 2 - BLK
+	if(ccx1<0||ccy1<0||ccx0>=canvas.width||ccy0>=canvas.height)return
+	x *= 64
+	y *= 64
+	ccx1 = Math.min(ccx1, canvas.width - BLK)
+	x -= (ccx0 - (ccx0 = Math.max(ccx0, 0))) / BLK
+	y += (ccy1 - (ccy1 = Math.min(ccy1, canvas.height - BLK))) / BLK
+	ccy0 = Math.max(ccy0, 0)
+	
+	let resy = y
+	for(let cix = ccx0; cix <= ccx1; cix += BLK){
+		for(let ciy = ccy1; ciy >= ccy0; ciy -= BLK){
+			drawblock(x, y, cix, ciy, c)
+			y++
+		}
+		x++
+		y = resy
+	}
+}
+let cam = {
+	get x(){return cx},
+	set x(a){cx=a
+		if(Math.abs(cx - rx) > canvas.width / BLK2 - innerWidth / BLK4 / ZOOM){
+			draw()
+		}
+		c.canvas.style.margin = Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM-c.canvas.offsetHeight/2) + "px 0 0 " + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM-c.canvas.offsetWidth/2) + "px"
+		pos("x: "+Math.floor(cx)+", y: "+Math.floor(cy))
+	},
+	get y(){return cy},
+	set y(a){cy=a
+		if(Math.abs(cy - ry) > canvas.height / BLK2 - innerHeight / BLK4 / ZOOM){
+			draw()
+		}
+		c.canvas.style.margin = Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM-c.canvas.offsetHeight/2) + "px 0 0 " + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM-c.canvas.offsetWidth/2) + "px"
+		pos("x: "+Math.floor(cx)+", y: "+Math.floor(cy))
+	}
+}
+let ZOOM = 16
+function zoom(a){
+	ZOOM=a
+	onresize()
+	draw(false)
+}
+let col = a => "#"+"05af"[a&3]+"05af"[(a>>2)&3]+"05af"[(a>>4)&3]
+
+let cols = (localStorage.cols||"2,8,32,0,21,63,10,40,34").split(",")
+let colbar = document.getElementById('colbar')
+function rendercol(){
+	for(let i in cols){
+		colbar.children[i].style.backgroundColor = col(cols[i])
+	}
+}
+let PEN = 1
+function selectcol(j){
+	PEN=cols[j]
+	for(var i=0;i<10;i++){
+		colbar.children[i].style.border=i==j?"2px solid #888":"none"
+		colbar.children[i].style.transform=i==j?"scale(1.3) translateY(-3px)":""
+		colbar.children[i].style.zIndex=i==j?"3":""
+	}
+}
+rendercol()
+selectcol(0)
+let c;
+try{c = canvas.getContext("2d")}catch(e){c = canvas.getContext}
+let w, h
+onresize = function(){
+	w = Math.ceil(innerWidth/BLK2/ZOOM)*BLK2
+	h = Math.ceil(innerHeight/BLK2/ZOOM)*BLK2
+	canvas.width = w
+	canvas.height = h
+	canvas.style.margin = "-" + h*ZOOM + "px 0 0 -" + w*ZOOM + "px"
+	canvas.style.width = w*2*ZOOM+"px"
+	canvas.style.height = h*2*ZOOM+"px"
+	c.imageSmoothingEnabled = false
+	draw(false)
+}
+function drawblock(x, y, ccx, ccy, chunk, rw=true){
+	let xt = x & 63
+	let yt = y & 63
+	let pos = (yt<<6) + xt
+	c.fillStyle = col(chunk[pos]) || "#222"
+	c.fillRect(ccx, ccy, BLK, BLK)
+}
+function draw(a=true){
+	let orx = rx, ory = ry
+	rx = Math.round(cx)
+	ry = Math.round(cy)
+	if(orx >> 4 != rx >> 4 || ory >> 4 != ry >> 4)move()
+	let x0 = Math.max(orx, rx) - canvas.width / BLK2
+	let x1 = Math.min(orx, rx) + canvas.width / BLK2
+	if(x0>x1)[x0, x1] = [x1, x0]
+	let y0 = Math.max(ory, ry) - canvas.height / BLK2
+	let y1 = Math.min(ory, ry) + canvas.height / BLK2
+	if(y0>y1)[y0, y1] = [y1, y0]
+	let ox0 = (x0 - orx) * BLK + canvas.width / 2
+	let oy1 = (ory - y0) * BLK + canvas.height / 2
+	let ox1 = ox0 + (x1-x0) * BLK
+	let oy0 = oy1 - (y1-y0) * BLK
+	let nx0 = (x0 - rx) * BLK + canvas.width / 2
+	let ny1 = (ry - y0) * BLK + canvas.height / 2
+	let nx1 = nx0 + (x1-x0) * BLK
+	let ny0 = ny1 - (y1-y0) * BLK
+	let boxes = Math.abs(rx-orx)<canvas.width/BLK2&&Math.abs(ry-ory)<canvas.height/BLK2 && a
+	let im
+	if(boxes)im = c.getImageData(ox0,oy0,ox1-ox0,oy1-oy0)
+	c.fillStyle = "#000000"
+	c.fillRect(0,0,canvas.width,canvas.height)
+	if(boxes)c.putImageData(im, nx0, ny0)
+	let x = Math.round(cx) - canvas.width / BLK2
+	let y = Math.round(cy) - canvas.height / BLK2
+	let chunks = []
+	let chunkx = Infinity
+	for(let ccx = 0;ccx < canvas.width;(ccx += BLK),x++){
+		let ccy = canvas.height-BLK
+		let tcy = 0
+		if(boxes && ccx >= nx0 && ccx < nx1){
+			if(ry > ory)(ccy = ny0 - BLK), y = y1
+			else tcy = ny1
+		}
+		if(chunkx != (x>>6))chunks.length = 0
+		for(let i = 0;ccy >= tcy;(ccy -= BLK),y++,i++){
+			let p = false
+			let ch = chunks[i] || (p=true,chunk(x>>6,y>>6))
+			if(p)chunks.push(ch)
+			
+			drawblock(x, y, ccx, ccy, ch,false)
+		}
+		y = Math.round(cy) - canvas.height / BLK2
+	}
+}
+function debug(t="\u200b"){
+	let txt = document.createElement("txt")
+	txt.style.background="rgba(0,0,0,0.5)"
+	txt.style.whiteSpace = "nowrap"
+	txt.innerHTML = t
+	dnode.appendChild(document.createTextNode(" "))
+	dnode.appendChild(txt)
+	return (function(a){txt.innerHTML=a})
+}
+var frameTime = 0, lastLoop = Date.now(), lastRef = lastLoop;
+let last = 0
+let fps = debug("FPS: 90")
+let pos = debug("x: 0, y: 0")
+let chks = debug("loading...")
+requestAnimationFrame(function f(){
+	var ft = Date.now() - lastLoop;
+	last += ft
+	frameTime += (ft - frameTime) / 20;
+	if(ft < 1000){
+		lastLoop = Date.now();
+		//while(last >= 20)update(void(last -= 20))
+		update()
+		last = 0
+	}else lastLoop = Date.now(), last = 0;
+	if((lastLoop>lastRef+300) && (lastRef=lastLoop)){
+		fps("FPS: "+Math.round(1000/frameTime))
+		chks("C: "+map.size+" / P: "+PEN)
+	}
+	requestAnimationFrame(f)
+})
+let awaitings = new Map()
+let seq = -1
+function update(){
+	if(!ws)return
+	if(!dragDown && touch == null){
+		let x0 = cam.x, y0 = cam.y
+		cam.x += dx / ZOOM / BLK4
+		cam.y += dy / ZOOM / BLK4
+		let x1 = cam.x, y1 = cam.y
+		if(fillOnMove)fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
+		dx *= 0.95
+		dy *= 0.95
+	}
+	if(ws.readyState == WebSocket.OPEN && draws.length > 0){
+		let buf = new BufWriter()
+		buf.byte(1)
+		buf.short(++seq)
+		seq&=65535
+		awaitings.set(seq, draws)
+		for(let [x, y, b] of draws){
+			buf.int(x)
+			buf.int(y)
+			buf.byte(b)
+		}
+		ws.send(buf.toBuf())
+		draws = []
+	}
+}
+function move(){
+	let buf = new BufWriter()
+	buf.byte(2)
+	buf.int(rx>>6)
+	buf.int(ry>>6)
+	ws.send(buf.toBuf())
+}
+
+let ws = location.hash.length>1 ? new WebSocket("ws://"+location.hash.slice(1)+":1292") : null
+if(ws)wsinit()
+else{
+	document.getElementById('ip').style.display="block"
+	if(localStorage.servers)document.getElementById('ip').insertAdjacentHTML('beforeend', localStorage.servers.split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('ws://'+this.textContent+':1292');wsinit()">${a.replace(/</g,"&lt;").replace(/"/g,"&quot;").replace(/&/g,"&amp;")}</div>`).join(''))
+}
+function wsinit(){
+document.getElementById('ip').style.display="none"
+ws.onclose = location.reload.bind(location)
+ws.onmessage = async function(e) {
+	document.getElementById('conn').style.display='none'
+  let buf = new Buf(await e.data.arrayBuffer())
+	let byte = buf.byte()
+	if(byte == 3){
+		let x = buf.int(), y = buf.int()
+		let i = new Float64Array(new Uint32Array([x&0x3FFFFFF,y&0x3FFFFFF]).buffer)[0]
+		let c = new Chunk(buf.slice(9))
+		map.set(i, c)
+		drawchunk(x, y)
+	}else if(byte == 4){
+		while(buf.i < buf.length){
+			let i = new Float64Array(new Uint32Array([buf.int()&0x3FFFFFF,buf.int()&0x3FFFFFF]).buffer)[0]
+			map.delete(i)
+		}
+	}else if(byte == 5){
+		set(buf.int(), buf.int(), buf.byte())
+		draws.pop()
+	}else if(byte == 6){
+		let i = buf.ushort()
+		for(let [x, y, b] of awaitings.get(i)){
+			set(x, y, b)
+			draws.pop()
+		}
+		awaitings.delete(i)
+	}
+}
+}
+onresize()
+let dx = 0, dy = 0
+let dragDown = false, touch = null, tt = null, fillOnMove = false
+oncontextmenu = e => e.preventDefault()
+onmousedown = (e) => {
+	if(e.target != ui)return
+	if(e.button == 2){
+		dragDown = true
+		dx = dy = 0
+		return
+	}else if(e.target == ui && PEN < 64){
+		let x = Math.floor((e.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
+		let y = Math.floor((innerHeight/2-e.clientY)/ZOOM/BLK2+cam.y)
+		set(x, y, PEN)
+		dragDown = 0
+	}
+}
+onmouseup = () => dragDown = false
+ontouchstart = e => {
+	if(e.target != ui)return
+	dx = dy = 0
+	if(touch){
+		fillOnMove = true
+		return
+	}
+	touch = e.touches[e.touches.length-1]
+	tt = setTimeout(() => {
+		if(!touch)return
+		tt = -1
+		let x = Math.floor((touch.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
+		let y = Math.floor((innerHeight/2-touch.clientY)/ZOOM/BLK2+cam.y)
+		set(x, y, PEN)
+	}, 300)
+}
+ontouchend = e => {
+	for(t of e.changedTouches)if(touch && touch.identifier == t.identifier){
+		touch = null
+		if(tt != null && tt != -1){
+			let x = Math.floor((t.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
+			let y = Math.floor((innerHeight/2-t.clientY)/ZOOM/BLK2+cam.y)
+			set(x, y, PEN)
+		}
+	}else fillOnMove = false
+	tt = null
+}
+function mv(x, y, sm = true){
+	if(sm)dx = x, dy = y
+	cam.x += x / ZOOM / BLK4
+	cam.y += y / ZOOM / BLK4
+}
+let draws = []
+ontouchmove = e => {
+	if(!touch)return
+	let t = [...e.changedTouches].find(a=>a.identifier==touch.identifier)
+	if(e.target != ui || !t)return
+	if(tt < 0){
+		let {clientX, clientY} = t
+		linefill(clientX, clientY, clientX - touch.clientX, clientY - touch.clientY)
+		touch = t
+		return
+	}
+	tt !== null && (clearTimeout(tt), tt = null)
+	if(fillOnMove){
+		let x0 = cam.x, y0 = cam.y
+		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
+		let x1 = cam.x, y1 = cam.y
+		fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
+	}else{
+		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
+	}
+	
+	touch = t
+}
+onmousemove = function(e){
+	if(e.target != ui)return
+	if(dragDown){
+		mv(-e.movementX, e.movementY)
+	}else if(dragDown === 0 && e.target == ui && PEN < 64){
+		linefill(e.clientX, e.clientY, e.movementX, e.movementY)
+	}
+}
+function linefill(clientX, clientY, movementX, movementY){
+	let x1 = (clientX-innerWidth/2)/ZOOM/BLK2+cam.x
+	let y1 = (innerHeight/2-clientY)/ZOOM/BLK2+cam.y
+	let x0 = x1 - movementX/ZOOM/BLK4
+	let y0 = y1 + movementY/ZOOM/BLK4
+	fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
+}
+function fillline(x0, x1, y0, y1){
+	let dx = x1 - x0
+	let dy = y1 - y0
+	if(Math.abs(dx) > Math.abs(dy)){
+		let slope = dy / dx
+		if(x0 > x1)slope=-slope
+		while(x0 != x1){
+			set(x0, Math.round(y0), PEN)
+			x0 += x0 > x1 ? -1 : 1
+			y0 += slope
+		}
+	}else{
+		let slope = dx / dy
+		if(y0 > y1)slope=-slope
+		while(y0 != y1){
+			set(Math.round(x0), y0, PEN)
+			y0 += y0 > y1 ? -1 : 1
+			x0 += slope
+		}
+	}
+	set(x1, y1, PEN)
+}
+onmousewheel = e => mv(e.deltaX, -e.deltaY, false)
+onkeypress = function(e){
+	if(+e.key){
+		selectcol(e.key-1)
+	}
+}
+let el = document.getElementById("colselector")
+for(let i = 0;i < 64;i++){
+	el.insertAdjacentHTML("beforeend", `<div style="background-color:${col((i&7)|((i&8)<<1)|((i&16)<<1)|((i&32)>>2))}"></div>`)
+}
+function usecol(p){
+	p+=''
+	let i = cols.indexOf(p)
+	if(i>-1){
+		cols.splice(i, 1)
+	}else cols.pop()
+	cols.unshift(p)
+	rendercol()
+	selectcol(0)
+	localStorage.cols = cols
+}
+</script>
+</html>
