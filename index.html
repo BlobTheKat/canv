@@ -587,9 +587,10 @@ ontouchend = e => {
 	for(t of e.changedTouches)if(touch && touch.identifier == t.identifier){
 		touch = null
 		if(tt != null && tt != -1){
+clearTimeout(tt)
 			let x = Math.floor((t.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
 			let y = Math.floor((innerHeight/2-t.clientY)/ZOOM/BLK2+cam.y)
-			if(!dx && !dy)set(x, y, PEN)
+			if(Math.abs(dx)+Math.abs(dy)<0.5)set(x, y, PEN)
 		}
 	}else fillOnMove = false
 	tt = null
