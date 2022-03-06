@@ -479,6 +479,8 @@ let seq = -1
 function update(){
 	if(!ws)return
 	if(!dragDown && touch == null){
+                if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
+                if(Math.abs(dy) / Math.abs(dx) < 0.3)dy = 0
 		let x0 = cam.x, y0 = cam.y
 		cam.x += dx / ZOOM / BLK4
 		cam.y += dy / ZOOM / BLK4
@@ -587,7 +589,7 @@ ontouchend = e => {
 		if(tt != null && tt != -1){
 			let x = Math.floor((t.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
 			let y = Math.floor((innerHeight/2-t.clientY)/ZOOM/BLK2+cam.y)
-			set(x, y, PEN)
+			if(!dx && !dy)set(x, y, PEN)
 		}
 	}else fillOnMove = false
 	tt = null
