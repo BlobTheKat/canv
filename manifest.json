@@ -1,0 +1,9 @@
+{
+  "name": "Canv",
+  "short_name": "Canv",
+  "theme_color": "#000000",
+  "background_color": "#2196f3",
+  "display": "fullscreen",
+  "scope": "/",
+  "start_url": "/"
+}
