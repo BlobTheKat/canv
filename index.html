@@ -308,8 +308,7 @@ function get(x, y){
 	if(!r)return 0
 	return r[((y&63)<<6)+(x&63)]
 }
-let _NULL = {}
-function set(x, y, b){
+function set(x, y, b, drw = true){
 	let i = new Float64Array(new Uint32Array([x>>>6,y>>>6]).buffer)[0]
 	let r = map.get(i)
 	x |= 0
@@ -320,8 +319,7 @@ function set(x, y, b){
 	if(!r)return 0
 	let ob = r[pos]
 	if(ob == b)return ob
-	draws.push([x, y, b])
-	if(b==_NULL)b = ob
+	if(drw)draws.push([x, y, b])
 	r[pos] = b
 	let ccx = (x - rx) * BLK + canvas.width / 2
 	let ccy = (ry - y) * BLK + canvas.height / 2 - BLK
@@ -557,13 +555,11 @@ ws.onmessage = async function(e) {
 			map.delete(i)
 		}
 	}else if(byte == 5){
-		set(buf.int(), buf.int(), buf.byte())
-		draws.pop()
+		set(buf.int(), buf.int(), buf.byte(), false)
 	}else if(byte == 6){
 		let i = buf.ushort()
 		for(let [x, y, b] of awaitings.get(i)){
-			set(x, y, b)
-			draws.pop()
+			set(x, y, b, false)
 		}
 		awaitings.delete(i)
 	}
