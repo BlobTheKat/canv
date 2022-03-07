@@ -589,7 +589,7 @@ ontouchstart = e => {
 		return
 	}
 	touch = e.touches[e.touches.length-1]
-	canDot = !dx && !dy
+	canDot = Math.abs(dx) + Math.abs(dy) < 0.3
 	tt = setTimeout(() => {
 		if(!touch)return
 		tt = -1
