@@ -516,7 +516,7 @@ let ws = location.hash.length>1 ? new WebSocket("ws://"+location.hash.slice(1)+"
 if(ws)wsinit()
 else{
 	document.getElementById('ip').style.display="block"
-	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"tunnelvision.online").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('ws://'+this.textContent+':1292');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('ws://'+this.textContent+':1292');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
 }
 function wsinit(){
 document.getElementById('ip').style.display="none"
