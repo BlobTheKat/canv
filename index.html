@@ -69,7 +69,7 @@
 			display: block;
 			cursor: pointer;
 		}
-		#out, #in{
+		#out, #in, #pick{
 			position: absolute;
 			right: 20px;
 			width: 60px;
@@ -85,6 +85,14 @@
 		}
 		#out.active, #in.active{
 			background: #333;
+		}
+		#pick{
+			bottom: 80px;
+			left: 20px;
+			font-size: 35px;
+			line-height: 55px;
+			font-weight: 400;
+			font-family: Arial;
 		}
 		#in{
 			bottom: 100px;
@@ -153,6 +161,7 @@
 			flex-wrap: wrap;
 			gap: 4px;
 			justify-content: center;
+			touch-action: pan-y;
 		}
 		#colselector div{
 			width: var(--w);
@@ -170,8 +179,9 @@
 			ui{
 				--w: calc(14.2857vw - 4px);
 			}
-			#in{bottom: calc(18vw + 80px)}
-			#out{bottom: 18vw}
+			#in{bottom: calc(19vw + 80px)}
+			#out{bottom: 19vw}
+			#pick{bottom: 19vw}
 			#colselector{
 				bottom: calc(14.2857vw + 12px);
 				z-index: 1;
@@ -210,7 +220,7 @@
 		}
 	</style>
 </head>
-<body ontouchstart="event.preventDefault()" ontouchend="event.target.click()">
+<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)">
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
@@ -231,17 +241,20 @@
 		</div>
 		<div id="crossa"></div>
 		<div id="crossb"></div>
+		<btn id="pick" active onclick="if(PEN=='257')return this.style.background='',this.style.color='',selectcol(0);PEN='257';this.style.background='#aaa';this.style.color='#333'">⌖</btn>
 		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
 		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
 	</ui>
-	<div id="ip" style="display:none;padding-top: calc(70vh - 300px);">
+	<div id="ip" style="padding-top: calc(70vh - 300px);">
 		<h1 style="text-align:center">Enter IP:</h1>
 		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');ws = new WebSocket('ws://'+this.value+':1292');wsinit()}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
+		<div class="server" style="text-decoration:none;font-size:1.2rem">Suggestions:</div>
 	</div>
 </body>
 <script>module={exports:{}}</script>
 <script src="https://unpkg.com/buf.js/index.js"></script>
 <script>
+let tches = new Set()
 document.querySelectorAll('[active]').forEach(function(el){
 	el.ontouchstart=()=>el.classList.add('active')
 	el.ontouchend=()=>el.classList.remove('active')
@@ -305,8 +318,9 @@ function set(x, y, b){
 	let yt = y&63
 	let pos = (yt<<6)+xt
 	if(!r)return 0
-	draws.push([x, y, b])
 	let ob = r[pos]
+	if(ob == b)return ob
+	draws.push([x, y, b])
 	if(b==_NULL)b = ob
 	r[pos] = b
 	let ccx = (x - rx) * BLK + canvas.width / 2
@@ -472,8 +486,9 @@ requestAnimationFrame(function f(){
 	frameTime += (ft - frameTime) / 20;
 	if(ft < 1000){
 		lastLoop = Date.now();
-		//while(last >= 20)update(void(last -= 20))
-		update()
+		/*
+		while(last >= 20)//*/
+		update(void(last -= 20))
 		last = 0
 	}else lastLoop = Date.now(), last = 0;
 	if((lastLoop>lastRef+300) && (lastRef=lastLoop)){
@@ -489,11 +504,9 @@ function update(){
 	if(!dragDown && touch == null){
                 if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
                 if(Math.abs(dy) / Math.abs(dx) < 0.3)dy = 0
-		let x0 = cam.x, y0 = cam.y
 		cam.x += dx / ZOOM / BLK4
 		cam.y += dy / ZOOM / BLK4
-		let x1 = cam.x, y1 = cam.y
-		if(fillOnMove)fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
+		if(fillOnMove)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 		dx *= 0.95
 		dy *= 0.95
 	}
@@ -523,7 +536,6 @@ function move(){
 let ws = location.hash.length>1 ? new WebSocket("ws://"+location.hash.slice(1)+":1292") : null
 if(ws)wsinit()
 else{
-	document.getElementById('ip').style.display="block"
 	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('ws://'+this.textContent+':1292');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
 }
 function wsinit(){
@@ -567,44 +579,45 @@ onmousedown = (e) => {
 		dragDown = true
 		dx = dy = 0
 		return
-	}else if(e.target == ui && PEN < 64){
-		let x = Math.floor((e.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
-		let y = Math.floor((innerHeight/2-e.clientY)/ZOOM/BLK2+cam.y)
-		set(x, y, PEN)
+	}else if(e.target == ui && PEN != 256){
+		set2(e.clientX, e.clientY)
 		dragDown = 0
 	}
 }
+let canDot = false
 onmouseup = () => dragDown = false
 ontouchstart = e => {
 	if(e.target != ui)return
-	dx = dy = 0
 	if(touch){
 		fillOnMove = true
 		return
 	}
 	touch = e.touches[e.touches.length-1]
+	canDot = !dx && !dy
 	tt = setTimeout(() => {
 		if(!touch)return
 		tt = -1
-		let x = Math.floor((touch.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
-		let y = Math.floor((innerHeight/2-touch.clientY)/ZOOM/BLK2+cam.y)
-		set(x, y, PEN)
+		canDot = false
+		set2(touch.clientX, touch.clientY)
 	}, 300)
+	dx = dy = 0
 }
 ontouchend = e => {
 	for(t of e.changedTouches)if(touch && touch.identifier == t.identifier){
 		touch = null
-		if(tt != null && tt != -1){
-clearTimeout(tt)
-			let x = Math.floor((t.clientX-innerWidth/2)/ZOOM/BLK2+cam.x)
-			let y = Math.floor((innerHeight/2-t.clientY)/ZOOM/BLK2+cam.y)
-			if(Math.abs(dx)+Math.abs(dy)<0.5)set(x, y, PEN)
+		if(canDot){
+			clearTimeout(tt)
+			set2(t.clientX, t.clientY)
 		}
 	}else fillOnMove = false
 	tt = null
+	canDot = false
 }
 function mv(x, y, sm = true){
-	if(sm)dx = x, dy = y
+	if(sm){
+		dx = x, dy = y
+		if(Math.abs(dx)+Math.abs(dy)<0.3)dx = dy = 0
+	}
 	cam.x += x / ZOOM / BLK4
 	cam.y += y / ZOOM / BLK4
 }
@@ -615,16 +628,14 @@ ontouchmove = e => {
 	if(e.target != ui || !t)return
 	if(tt < 0){
 		let {clientX, clientY} = t
-		linefill(clientX, clientY, clientX - touch.clientX, clientY - touch.clientY)
+		set2(clientX, clientY)
 		touch = t
 		return
 	}
-	tt !== null && (clearTimeout(tt), tt = null)
+	tt !== null && (clearTimeout(tt), tt = null, canDot = false)
 	if(fillOnMove){
-		let x0 = cam.x, y0 = cam.y
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
-		let x1 = cam.x, y1 = cam.y
-		fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
+		set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 	}else{
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
 	}
@@ -635,40 +646,21 @@ onmousemove = function(e){
 	if(e.target != ui)return
 	if(dragDown){
 		mv(-e.movementX, e.movementY)
-	}else if(dragDown === 0 && e.target == ui && PEN < 64){
-		linefill(e.clientX, e.clientY, e.movementX, e.movementY)
+	}else if(dragDown === 0 && e.target == ui && PEN != 256){
+		set2(e.clientX, e.clientY)
 	}
 }
-function linefill(clientX, clientY, movementX, movementY){
-	let x1 = (clientX-innerWidth/2)/ZOOM/BLK2+cam.x
-	let y1 = (innerHeight/2-clientY)/ZOOM/BLK2+cam.y
-	let x0 = x1 - movementX/ZOOM/BLK4
-	let y0 = y1 + movementY/ZOOM/BLK4
-	fillline(Math.floor(x0), Math.floor(x1), Math.floor(y0), Math.floor(y1))
-}
-function fillline(x0, x1, y0, y1){
-	let dx = x1 - x0
-	let dy = y1 - y0
-	if(Math.abs(dx) > Math.abs(dy)){
-		let slope = dy / dx
-		if(x0 > x1)slope=-slope
-		while(x0 != x1){
-			set(x0, Math.round(y0), PEN)
-			x0 += x0 > x1 ? -1 : 1
-			y0 += slope
-		}
-	}else{
-		let slope = dx / dy
-		if(y0 > y1)slope=-slope
-		while(y0 != y1){
-			set(Math.round(x0), y0, PEN)
-			y0 += y0 > y1 ? -1 : 1
-			x0 += slope
-		}
+function set2(clientX, clientY){
+	let x = (clientX-innerWidth/2)/ZOOM/BLK2+cam.x
+	let y = (innerHeight/2-clientY)/ZOOM/BLK2+cam.y
+	if(PEN=='257'){
+		usecol(get(Math.floor(x), Math.floor(y)))
+		document.getElementById('pick').style.background=""
+		document.getElementById('pick').style.color=""
 	}
-	set(x1, y1, PEN)
+	set(Math.floor(x), Math.floor(y), PEN)
 }
-onmousewheel = e => mv(e.deltaX, -e.deltaY, false)
+onmousewheel = e => e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined
 onkeypress = function(e){
 	if(+e.key){
 		selectcol(e.key-1)
