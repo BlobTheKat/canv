@@ -220,7 +220,7 @@
 		}
 	</style>
 </head>
-<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)">
+<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" ontouchstart="event.preventDefault()">
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
@@ -254,6 +254,7 @@
 <script>module={exports:{}}</script>
 <script src="https://unpkg.com/buf.js/index.js"></script>
 <script>
+location.protocol=='https:'&&(location.protocol='http:')
 let tches = new Set()
 document.querySelectorAll('[active]').forEach(function(el){
 	el.ontouchstart=()=>el.classList.add('active')
@@ -290,13 +291,6 @@ class Chunk extends Uint8Array{
 	getcell(x, y){
 		return this[(y<<6) + (x&63)]
 	}
-}
-function move(x, y){
-	let data = new BufWriter()
-	data.byte(2)
-	data.int(x)
-	data.int(y)
-	send(data.toBuf())
 }
 function chunk(x, y){
 	let i = new Float64Array(new Uint32Array([x&0x3FFFFFF,y&0x3FFFFFF]).buffer)[0]
@@ -421,7 +415,6 @@ function draw(a=true){
 	let orx = rx, ory = ry
 	rx = Math.round(cx)
 	ry = Math.round(cy)
-	if(orx >> 4 != rx >> 4 || ory >> 4 != ry >> 4)move()
 	let x0 = Math.max(orx, rx) - canvas.width / BLK2
 	let x1 = Math.min(orx, rx) + canvas.width / BLK2
 	if(x0>x1)[x0, x1] = [x1, x0]
@@ -522,12 +515,14 @@ function update(){
 		ws.send(buf.toBuf())
 		draws = []
 	}
+        if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 }
+let lx = 0, ly = 0
 function move(){
 	let buf = new BufWriter()
 	buf.byte(2)
-	buf.int(rx>>6)
-	buf.int(ry>>6)
+	buf.int(cx>>6)
+	buf.int(cy>>6)
 	ws.send(buf.toBuf())
 }
 
@@ -660,6 +655,11 @@ onmousewheel = e => e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined
 onkeypress = function(e){
 	if(+e.key){
 		selectcol(e.key-1)
+	}
+	if(e.key == 'q' || e.key == ','){
+		let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)
+	}else if(e.key == 'e' || e.key == '.'){
+		if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)
 	}
 }
 let el = document.getElementById("colselector")
