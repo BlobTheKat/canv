@@ -490,6 +490,7 @@ requestAnimationFrame(function f(){
 })
 let awaitings = new Map()
 let seq = -1
+let lastSent = 0
 function update(){
 	if(!ws)return
 	if(!dragDown && touch == null){
@@ -501,7 +502,9 @@ function update(){
 		dx *= 0.95
 		dy *= 0.95
 	}
-	if(ws.readyState == WebSocket.OPEN && draws.length > 0){
+	let NOW = Date.now()
+	if(ws.readyState == WebSocket.OPEN && draws.length > 0 && NOW > lastSent + 100){
+		lastSent = NOW
 		let buf = new BufWriter()
 		buf.byte(1)
 		buf.short(++seq)
