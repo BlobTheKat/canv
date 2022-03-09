@@ -220,7 +220,7 @@
 		}
 	</style>
 </head>
-<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" ontouchstart="event.preventDefault()">
+<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" >
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
@@ -247,7 +247,7 @@
 	</ui>
 	<div id="ip" style="padding-top: calc(70vh - 300px);">
 		<h1 style="text-align:center">Enter IP:</h1>
-		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');ws = new WebSocket('ws://'+this.value+':1292');wsinit()}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
+		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');ws = new WebSocket('wss://'+this.value+':443');wsinit()}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
 		<div class="server" style="text-decoration:none;font-size:1.2rem">Suggestions:</div>
 	</div>
 </body>
@@ -293,17 +293,17 @@ class Chunk extends Uint8Array{
 	}
 }
 function chunk(x, y){
-	let i = new Float64Array(new Uint32Array([x&0x3FFFFFF,y&0x3FFFFFF]).buffer)[0]
+	let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
 	return map.get(i) || Chunk.VOID
 }
 function get(x, y){
-	let i = new Float64Array(new Uint32Array([x>>>6,y>>>6]).buffer)[0]
+	let i = (x>>>6)+(y>>>6)*0x4000000
 	let r = map.get(i)
 	if(!r)return 0
 	return r[((y&63)<<6)+(x&63)]
 }
 function set(x, y, b, drw = true){
-	let i = new Float64Array(new Uint32Array([x>>>6,y>>>6]).buffer)[0]
+	let i = (x>>>6)+(y>>>6)*0x4000000
 	let r = map.get(i)
 	x |= 0
 	y |= 0
@@ -499,9 +499,9 @@ function update(){
 		cam.x += dx / ZOOM / BLK4
 		cam.y += dy / ZOOM / BLK4
 		if(fillOnMove)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
-		dx *= 0.95
-		dy *= 0.95
 	}
+	dx *= 0.95
+	dy *= 0.95
 	let NOW = Date.now()
 	if(ws.readyState == WebSocket.OPEN && draws.length > 0 && NOW > lastSent + 100){
 		lastSent = NOW
@@ -518,7 +518,7 @@ function update(){
 		ws.send(buf.toBuf())
 		draws = []
 	}
-        if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
+  if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 }
 let lx = 0, ly = 0
 function move(){
@@ -529,27 +529,28 @@ function move(){
 	ws.send(buf.toBuf())
 }
 
-let ws = location.hash.length>1 ? new WebSocket("ws://"+location.hash.slice(1)+":1292") : null
+let ws = location.hash.length>1 ? new WebSocket("wss://"+location.hash.slice(1)+":443") : null
 if(ws)wsinit()
 else{
-	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('ws://'+this.textContent+':1292');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('wss://'+this.textContent+':443');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
 }
 function wsinit(){
 document.getElementById('ip').style.display="none"
-ws.onclose = location.reload.bind(location)
+ws.onclose = null//location.reload.bind(location)
 ws.onmessage = async function(e) {
 	document.getElementById('conn').style.display='none'
   let buf = new Buf(await e.data.arrayBuffer())
 	let byte = buf.byte()
 	if(byte == 3){
 		let x = buf.int(), y = buf.int()
-		let i = new Float64Array(new Uint32Array([x&0x3FFFFFF,y&0x3FFFFFF]).buffer)[0]
+		let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
 		let c = new Chunk(buf.slice(9))
 		map.set(i, c)
 		drawchunk(x, y)
 	}else if(byte == 4){
 		while(buf.i < buf.length){
-			let i = new Float64Array(new Uint32Array([buf.int()&0x3FFFFFF,buf.int()&0x3FFFFFF]).buffer)[0]
+			let x = buf.int(), y = buf.int()
+			let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
 			map.delete(i)
 		}
 	}else if(byte == 5){
@@ -633,13 +634,12 @@ ontouchmove = e => {
 	}else{
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
 	}
-	
 	touch = t
 }
 onmousemove = function(e){
 	if(e.target != ui)return
 	if(dragDown){
-		mv(-e.movementX, e.movementY)
+		mv(-e.movementX*2/devicePixelRatio, e.movementY*2/devicePixelRatio)
 	}else if(dragDown === 0 && e.target == ui && PEN != 256){
 		set2(e.clientX, e.clientY)
 	}
