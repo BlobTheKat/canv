@@ -254,7 +254,7 @@
 <script>module={exports:{}}</script>
 <script src="https://unpkg.com/buf.js/index.js"></script>
 <script>
-location.protocol=='https:'&&(location.protocol='http:')
+location.protocol=='http:'&&(location.protocol='https:')
 let tches = new Set()
 document.querySelectorAll('[active]').forEach(function(el){
 	el.ontouchstart=()=>el.classList.add('active')
