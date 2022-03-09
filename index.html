@@ -97,8 +97,8 @@
 			font-family: Arial;
 		}
 		#back{
-			top: 20px;
-			left: 20px;
+			top: 13px;
+			left: 13px;
 			width: 40px;
 			height: 40px;
 			line-height: 40px;
@@ -256,9 +256,8 @@
 		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
 		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
 	</ui>
-	<div id="ip" style="padding-top: calc(70vh - 300px);">
-		<h1 style="text-align:center">Enter IP:</h1>
-		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');wsinit(this.value)}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
+	<div id="ip" style="padding-top: calc(70vh - 260px);">
+		<input placeholder="Enter IP" onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');wsinit(this.value)}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
 		<div class="server" style="text-decoration:none;font-size:1.2rem">Suggestions:</div>
 	</div>
 </body>
