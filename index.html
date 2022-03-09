@@ -45,13 +45,15 @@
 		}
 		debug{
 			position: fixed;
-			top: 0;left: 0;
-			text-align: right;
+			top: 0;
+			right: 0;
 			color: #fff;
-			display: block;
+			display: flex;
 			z-index: 10;
 			width: 0;
 			overflow: visible;
+			flex-direction: column;
+			align-items: flex-end;
 		}
 		canvas{
 			image-rendering: optimizeSpeed;
@@ -69,7 +71,7 @@
 			display: block;
 			cursor: pointer;
 		}
-		#out, #in, #pick{
+		#out, #in, #pick, #back{
 			position: absolute;
 			right: 20px;
 			width: 60px;
@@ -93,6 +95,14 @@
 			line-height: 55px;
 			font-weight: 400;
 			font-family: Arial;
+		}
+		#back{
+			top: 20px;
+			left: 20px;
+			width: 40px;
+			height: 40px;
+			line-height: 40px;
+			font-size: 20px;
 		}
 		#in{
 			bottom: 100px;
@@ -242,12 +252,13 @@
 		<div id="crossa"></div>
 		<div id="crossb"></div>
 		<btn id="pick" active onclick="if(PEN=='257')return this.style.background='',this.style.color='',selectcol(0);PEN='257';this.style.background='#aaa';this.style.color='#333'">⌖</btn>
+		<btn id="back" active onclick="location=location.pathname+location.search">&lt;</btn>
 		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
 		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
 	</ui>
 	<div id="ip" style="padding-top: calc(70vh - 300px);">
 		<h1 style="text-align:center">Enter IP:</h1>
-		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');ws = new WebSocket('wss://'+this.value+':1292');wsinit()}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
+		<input onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');wsinit(this.value)}" style="display: block;margin: auto;width: 400px;max-width: 80vw;margin-bottom:30px;" />
 		<div class="server" style="text-decoration:none;font-size:1.2rem">Suggestions:</div>
 	</div>
 </body>
@@ -492,6 +503,7 @@ let awaitings = new Map()
 let seq = -1
 let lastSent = 0
 function update(){
+	if(IP)hash = location.hash = `#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`
 	if(!ws)return
 	if(!dragDown && touch == null){
                 if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
@@ -528,41 +540,48 @@ function move(){
 	buf.int(cy>>6)
 	ws.send(buf.toBuf())
 }
-
-let ws = location.hash.length>1 ? new WebSocket("wss://"+location.hash.slice(1)+":1292") : null
-if(ws)wsinit()
-else{
-	document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="ws = new WebSocket('wss://'+this.textContent+':1292');wsinit()">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
-}
-function wsinit(){
-document.getElementById('ip').style.display="none"
-ws.onclose = location.reload.bind(location)
-ws.onmessage = async function(e) {
-	document.getElementById('conn').style.display='none'
-  let buf = new Buf(await e.data.arrayBuffer())
-	let byte = buf.byte()
-	if(byte == 3){
-		let x = buf.int(), y = buf.int()
-		let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
-		let c = new Chunk(buf.slice(9))
-		map.set(i, c)
-		drawchunk(x, y)
-	}else if(byte == 4){
-		while(buf.i < buf.length){
+let IP = "", hash = location.hash
+onhashchange = function(){if(hash != location.hash)location.reload()}
+let ws
+let [, a, x, y] = location.hash.split("#")
+if(a)wsinit(a, x, y)
+else document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+function wsinit(a, x = 0, y = 0){
+	IP = a
+	x*=1; y*=1
+	const pos = x === x && y === y
+	ws = new WebSocket('ws'+location.protocol.slice(4)+'//'+a+':1292' + (pos ? `/${lx = x>>6}/${ly = y>>6}` : ""));
+	hash = location.hash = "#" + a + (pos ? "#" + x + "#" + y : "")
+	cam.x = x + 0.5
+	cam.y = y + 0.5
+	document.getElementById('ip').style.display='none'
+	ws.onclose = () => location=location.pathname+location.search
+	ws.onmessage = async function(e) {
+		document.getElementById('conn').style.display='none'
+		let buf = new Buf(await e.data.arrayBuffer())
+		let byte = buf.byte()
+		if(byte == 3){
 			let x = buf.int(), y = buf.int()
 			let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
-			map.delete(i)
+			let c = new Chunk(buf.slice(9))
+			map.set(i, c)
+			drawchunk(x, y)
+		}else if(byte == 4){
+			while(buf.i < buf.length){
+				let x = buf.int(), y = buf.int()
+				let i = (x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000
+				map.delete(i)
+			}
+		}else if(byte == 5){
+			set(buf.int(), buf.int(), buf.byte(), false)
+		}else if(byte == 6){
+			let i = buf.ushort()
+			for(let [x, y, b] of awaitings.get(i)){
+				set(x, y, b, false)
+			}
+			awaitings.delete(i)
 		}
-	}else if(byte == 5){
-		set(buf.int(), buf.int(), buf.byte(), false)
-	}else if(byte == 6){
-		let i = buf.ushort()
-		for(let [x, y, b] of awaitings.get(i)){
-			set(x, y, b, false)
-		}
-		awaitings.delete(i)
 	}
-}
 }
 onresize()
 let dx = 0, dy = 0
