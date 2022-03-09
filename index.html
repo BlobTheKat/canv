@@ -536,7 +536,7 @@ else{
 }
 function wsinit(){
 document.getElementById('ip').style.display="none"
-ws.onclose = null//location.reload.bind(location)
+ws.onclose = location.reload.bind(location)
 ws.onmessage = async function(e) {
 	document.getElementById('conn').style.display='none'
   let buf = new Buf(await e.data.arrayBuffer())
