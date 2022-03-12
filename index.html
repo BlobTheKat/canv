@@ -378,10 +378,9 @@ let ZOOM = 16
 function zoom(a){
 	ZOOM=a
 	onresize()
-	draw(false)
 }
 let col = a => "#"+"05af"[a&3]+"05af"[(a>>2)&3]+"05af"[(a>>4)&3]
-let col2 = a => (a&3)*85 + ((a>>2)&3)*21760 + ((a>>4)&3)*5570560
+let col2 = a => (a&3)*85 + ((a>>2)&3)*21760 + ((a>>4)&3)*5570560 + 4278190080
 
 let cols = (localStorage.cols||"2,8,32,0,21,63,10,40,34").split(",")
 let colbar = document.getElementById('colbar')
@@ -449,7 +448,8 @@ function draw(a=true){
 	let y = Math.round(cy) - canvas.height / BLK2
 	let chunks = []
 	let chunkx = Infinity
-	let data = BLK == 1 ? c.getImageData(0,0,w,h) : null
+	let data = BLK == 1 ? c.getImageData(0,0,c.canvas.width,c.canvas.height) : null
+	let dat = new Uint32Array(data.data.buffer)
 	for(let ccx = 0;ccx < canvas.width;(ccx += BLK),x++){
 		let ccy = canvas.height-BLK
 		let tcy = 0
@@ -462,14 +462,8 @@ function draw(a=true){
 			let p = false
 			let ch = chunks[i] || (p=true,chunk(x>>6,y>>6))
 			if(p)chunks.push(ch)
-			if(BLK == 1){
-				let j = ccy * c.canvas.width + ccx
-				let a = col2(ch[((y & 63)<<6) + (x & 63)])
-				data[j] = a
-				data[j+1] = a >> 8
-				data[j+2] = a >> 16
-				data[j+3] = 255
-			}else{
+			if(BLK == 1) dat[ccy * c.canvas.width + ccx] = col2(ch[((y & 63)<<6) + (x & 63)])
+			else{
 				drawblock(x, y, ccx, ccy, ch, false)
 			}
 		}
@@ -563,8 +557,9 @@ function wsinit(a, x = 0, y = 0){
 	const pos = x === x && y === y
 	ws = new WebSocket('ws'+location.protocol.slice(4)+'//'+a+':1292' + (pos ? `/${lx = x>>6}/${ly = y>>6}` : ""));
 	hash = location.hash = "#" + a + (pos ? "#" + x + "#" + y : "")
-	cam.x = x + 0.5
-	cam.y = y + 0.5
+	cx = x + 0.5
+	cy = y + 0.5
+	onresize()
 	document.getElementById('ip').style.display='none'
 	ws.onclose = () => location=location.pathname+location.search
 	ws.onmessage = async function(e) {
@@ -594,7 +589,6 @@ function wsinit(a, x = 0, y = 0){
 		}
 	}
 }
-onresize()
 let dx = 0, dy = 0
 let dragDown = false, touch = null, tt = null, fillOnMove = false
 oncontextmenu = e => e.preventDefault()
