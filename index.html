@@ -264,7 +264,7 @@
 <script>module={exports:{}}</script>
 <script src="https://unpkg.com/buf.js/index.js"></script>
 <script>
-location.protocol=='http:'&&(location.protocol='https:')
+location.protocol=='http:'&&location.hostname!='localhost'&&(location.protocol='https:')
 let tches = new Set()
 document.querySelectorAll('[active]').forEach(function(el){
 	el.ontouchstart=()=>el.classList.add('active')
@@ -381,6 +381,7 @@ function zoom(a){
 	draw(false)
 }
 let col = a => "#"+"05af"[a&3]+"05af"[(a>>2)&3]+"05af"[(a>>4)&3]
+let col2 = a => (a&3)*85 + ((a>>2)&3)*21760 + ((a>>4)&3)*5570560
 
 let cols = (localStorage.cols||"2,8,32,0,21,63,10,40,34").split(",")
 let colbar = document.getElementById('colbar')
@@ -443,12 +444,12 @@ function draw(a=true){
 	let im
 	if(boxes)im = c.getImageData(ox0,oy0,ox1-ox0,oy1-oy0)
 	c.fillStyle = "#000000"
-	c.fillRect(0,0,canvas.width,canvas.height)
 	if(boxes)c.putImageData(im, nx0, ny0)
 	let x = Math.round(cx) - canvas.width / BLK2
 	let y = Math.round(cy) - canvas.height / BLK2
 	let chunks = []
 	let chunkx = Infinity
+	let data = BLK == 1 ? c.getImageData(0,0,w,h) : null
 	for(let ccx = 0;ccx < canvas.width;(ccx += BLK),x++){
 		let ccy = canvas.height-BLK
 		let tcy = 0
@@ -461,10 +462,21 @@ function draw(a=true){
 			let p = false
 			let ch = chunks[i] || (p=true,chunk(x>>6,y>>6))
 			if(p)chunks.push(ch)
-			
-			drawblock(x, y, ccx, ccy, ch,false)
+			if(BLK == 1){
+				let j = ccy * c.canvas.width + ccx
+				let a = col2(ch[((y & 63)<<6) + (x & 63)])
+				data[j] = a
+				data[j+1] = a >> 8
+				data[j+2] = a >> 16
+				data[j+3] = 255
+			}else{
+				drawblock(x, y, ccx, ccy, ch, false)
+			}
 		}
 		y = Math.round(cy) - canvas.height / BLK2
+	}
+	if(BLK == 1){
+		c.putImageData(data, 0 ,0)
 	}
 }
 function debug(t="\u200b"){
@@ -673,7 +685,7 @@ function set2(clientX, clientY){
 	}
 	set(Math.floor(x), Math.floor(y), PEN)
 }
-onmousewheel = e => (e.preventDefault(), e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined)
+addEventListener('mousewheel', e => (e.preventDefault(), e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined), {passive:false})
 onkeypress = function(e){
 	if(+e.key){
 		selectcol(e.key-1)
