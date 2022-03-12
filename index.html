@@ -230,7 +230,7 @@
 		}
 	</style>
 </head>
-<body ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" >
+<body ontouchstart="event.preventDefault()" ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" >
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
@@ -362,7 +362,7 @@ let cam = {
 		if(Math.abs(cx - rx) > canvas.width / BLK2 - innerWidth / BLK4 / ZOOM){
 			draw()
 		}
-		c.canvas.style.margin = Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM-c.canvas.offsetHeight/2) + "px 0 0 " + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM-c.canvas.offsetWidth/2) + "px"
+		c.canvas.style.transform = "translate(" + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM) + "px, " + Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM) + "px)"
 		pos("x: "+Math.floor(cx)+", y: "+Math.floor(cy))
 	},
 	get y(){return cy},
@@ -370,7 +370,7 @@ let cam = {
 		if(Math.abs(cy - ry) > canvas.height / BLK2 - innerHeight / BLK4 / ZOOM){
 			draw()
 		}
-		c.canvas.style.margin = Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM-c.canvas.offsetHeight/2) + "px 0 0 " + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM-c.canvas.offsetWidth/2) + "px"
+		c.canvas.style.transform = "translate(" + Math.round(rx*BLK2*ZOOM-cx*BLK2*ZOOM) + "px, " + Math.round(cy*BLK2*ZOOM-ry*BLK2*ZOOM) + "px)"
 		pos("x: "+Math.floor(cx)+", y: "+Math.floor(cy))
 	}
 }
@@ -607,7 +607,8 @@ ontouchstart = e => {
 	}
 	touch = e.touches[e.touches.length-1]
 	canDot = Math.abs(dx) + Math.abs(dy) < 0.3
-	tt = setTimeout(() => {
+	if(touch.force)tt = -1
+	else tt = setTimeout(() => {
 		if(!touch)return
 		tt = -1
 		canDot = false
@@ -672,7 +673,7 @@ function set2(clientX, clientY){
 	}
 	set(Math.floor(x), Math.floor(y), PEN)
 }
-onmousewheel = e => e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined
+onmousewheel = e => (e.preventDefault(), e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined)
 onkeypress = function(e){
 	if(+e.key){
 		selectcol(e.key-1)
