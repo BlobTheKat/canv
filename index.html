@@ -334,7 +334,7 @@ function set(x, y, b, drw = true){
 	let yt = y&63
 	let pos = (yt<<6)+xt
 	if(!r)return 0
-	if((r[pos] & 63) == b)return b
+	if((r[pos] & 63) == b)return r[pos]
 	if(cd > Date.now()){
 		float.style.color = "red"
 		setTimeout(() => float.style.color = "white", 1000)
@@ -348,7 +348,7 @@ function set(x, y, b, drw = true){
 	}else r[pos] = b
 	let ccx = (x - rx) * BLK + canvas.width / 2
 	let ccy = (ry - y) * BLK + canvas.height / 2 - BLK
-	if(ccx<0||ccy<0||ccx>=canvas.width||ccy>=canvas.height)return b
+	if(ccx<0||ccy<0||ccx>=canvas.width||ccy>=canvas.height)return r[pos]
 	drawblock(x, y, ccx, ccy, r)
 	return r[pos]
 }
@@ -546,20 +546,22 @@ function update(){
 	dx *= 0.95
 	dy *= 0.95
 	let NOW = Date.now()
-	if(ws.readyState == WebSocket.OPEN && draws.length > 0 && NOW > lastSent + 100){
-		lastSent = NOW
-		let buf = new BufWriter()
-		buf.byte(1)
-		buf.short(++seq)
-		seq&=65535
-		awaitings.set(seq, draws)
-		for(let [x, y, b] of draws){
-			buf.int(x)
-			buf.int(y)
-			buf.byte(b)
+	if(ws.readyState == WebSocket.OPEN){
+		if(draws.length > 0 && NOW > lastSent + 100){}
+			lastSent = NOW
+			let buf = new BufWriter()
+			buf.byte(1)
+			buf.short(++seq)
+			seq&=65535
+			awaitings.set(seq, draws)
+			for(let [x, y, b] of draws){
+				buf.int(x)
+				buf.int(y)
+				buf.byte(b)
+			}
+			ws.send(buf.toBuf())
+			draws = []
 		}
-		ws.send(buf.toBuf())
-		draws = []
 		if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 	}
   
