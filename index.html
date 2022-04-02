@@ -547,7 +547,7 @@ function update(){
 	dy *= 0.95
 	let NOW = Date.now()
 	if(ws.readyState == WebSocket.OPEN){
-		if(draws.length > 0 && NOW > lastSent + 100){}
+		if(draws.length > 0 && NOW > lastSent + 100){
 			lastSent = NOW
 			let buf = new BufWriter()
 			buf.byte(1)
@@ -564,7 +564,6 @@ function update(){
 		}
 		if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 	}
-  
 }
 let lx = 0, ly = 0
 function move(){
