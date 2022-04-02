@@ -531,7 +531,7 @@ let seq = -1
 let lastSent = 0
 let float = document.querySelector('float')
 setInterval(()=>{
-	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.3'>"+IP+"</span>"
+	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
 },100)
 function update(){
 	if(IP)hash = location.hash = `#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`
