@@ -546,7 +546,7 @@ function update(){
     if(Math.abs(dy) / Math.abs(dx) < 0.3)dy = 0
 		cam.x += dx / ZOOM / BLK4
 		cam.y += dy / ZOOM / BLK4
-		if(fillOnMove)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
+		//if(fillOnMove)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 	}
 	dx *= 0.95
 	dy *= 0.95
@@ -648,6 +648,7 @@ ontouchstart = e => {
 	if(e.target != ui)return
 	if(touch){
 		fillOnMove = true
+                set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 		return
 	}
 	touch = e.touches[e.touches.length-1]
@@ -694,8 +695,7 @@ ontouchmove = e => {
 	tt !== null && (clearTimeout(tt), tt = null, canDot = false)
 	if(fillOnMove){
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
-		if(fillOnMove === true)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
-                fillOnMove = 1
+		//set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 	}else{
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
 	}
