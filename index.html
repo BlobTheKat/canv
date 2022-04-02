@@ -638,12 +638,12 @@ onmousedown = (e) => {
 		dx = dy = 0
 		return
 	}else if(e.target == ui && PEN != 256){
-		set2(e.clientX, e.clientY)
+		//set2(e.clientX, e.clientY)
 		dragDown = 0
 	}
 }
 let canDot = false
-onmouseup = () => dragDown = false
+onmouseup = () => {dragDown = false;set2(e.clientX, e.clientY)}
 ontouchstart = e => {
 	if(e.target != ui)return
 	if(touch){
@@ -687,14 +687,14 @@ ontouchmove = e => {
 	if(e.target != ui || !t)return
 	if(tt < 0){
 		let {clientX, clientY} = t
-		set2(clientX, clientY)
+		//set2(clientX, clientY)
 		touch = t
 		return
 	}
 	tt !== null && (clearTimeout(tt), tt = null, canDot = false)
 	if(fillOnMove){
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
-		set(Math.floor(cam.x), Math.floor(cam.y), PEN)
+		//set(Math.floor(cam.x), Math.floor(cam.y), PEN)
 	}else{
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
 	}
@@ -705,7 +705,7 @@ onmousemove = function(e){
 	if(dragDown){
 		mv(-e.movementX*2/devicePixelRatio, e.movementY*2/devicePixelRatio)
 	}else if(dragDown === 0 && e.target == ui && PEN != 256){
-		set2(e.clientX, e.clientY)
+		//set2(e.clientX, e.clientY)
 	}
 }
 function set2(clientX, clientY){
