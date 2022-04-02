@@ -199,6 +199,11 @@
 				left: 0;
 				--w: calc(12.5vw - 4.5px);
 			}
+			float{
+				bottom: 20vw !important;
+				right: 50% !important;
+				transform: translateX(50%);
+			}
 		}
 		#ip{
 			position: absolute;
@@ -508,7 +513,7 @@ let last = 0
 let fps = debug("FPS: 90")
 let pos = debug("x: 0, y: 0")
 let chks = debug("loading...")
-debug("v: 1.3.1")
+debug("v: 1.3.2")
 requestAnimationFrame(function f(){
 	var ft = Date.now() - lastLoop;
 	last += ft
@@ -592,7 +597,7 @@ function wsinit(a, x = 0, y = 0){
 	cy = y + 0.5
 	onresize()
 	document.getElementById('ip').style.display='none'
-	ws.onclose = () => location.hash="home"
+	ws.onclose = () => location.reload()
 	ws.onmessage = async function(e) {
 		document.getElementById('conn').style.display='none'
 		let buf = new Buf(await e.data.arrayBuffer())
