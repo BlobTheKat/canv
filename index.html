@@ -228,6 +228,16 @@
 			text-decoration: underline;
 			cursor: pointer;
 		}
+		float{
+			display: block;
+			position: absolute;
+			bottom: 20px;
+			right: 100px;
+			padding: 10px;
+			background: rgba(0,0,0,0.3);
+			border-radius: 100px;
+			color: white;
+		}
 	</style>
 </head>
 <body ontouchstart="event.preventDefault()" ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" >
@@ -252,9 +262,10 @@
 		<div id="crossa"></div>
 		<div id="crossb"></div>
 		<btn id="pick" active onclick="if(PEN=='257')return this.style.background='',this.style.color='',selectcol(0);PEN='257';this.style.background='#aaa';this.style.color='#333'">⌖</btn>
-		<btn id="back" active onclick="location=location.pathname+location.search">&lt;</btn>
+		<btn id="back" active onclick="location.hash='home'">&lt;</btn>
 		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
 		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
+		<float></float>
 	</ui>
 	<div id="ip" style="padding-top: calc(70vh - 260px);">
 		<input placeholder="Enter IP" onclick="this.focus()" onkeypress="if(event.keyCode==13){let a = localStorage.servers?localStorage.servers.split('\n'):[];if(a.length>9)a.pop();a.unshift(this.value);localStorage.servers=a.join('\n');wsinit(this.value)}" style="display: block;text-align:center;margin: auto;width: 300px;max-width: 80vw;margin-bottom:30px;" />
@@ -312,6 +323,8 @@ function get(x, y){
 	if(!r)return 0
 	return r[((y&63)<<6)+(x&63)]
 }
+let cd = +localStorage.cd || Date.now()
+localStorage.cd = cd
 function set(x, y, b, drw = true){
 	let i = (x>>>6)+(y>>>6)*0x4000000
 	let r = map.get(i)
@@ -321,15 +334,23 @@ function set(x, y, b, drw = true){
 	let yt = y&63
 	let pos = (yt<<6)+xt
 	if(!r)return 0
-	let ob = r[pos]
-	if(ob == b)return ob
-	if(drw)draws.push([x, y, b])
-	r[pos] = b
+	if((r[pos] & 63) == b)return b
+	if(cd > Date.now()){
+		float.style.color = "red"
+		setTimeout(() => float.style.color = "white", 1000)
+		return r[pos]
+	}
+	if(drw){
+		b &= 63
+		localStorage.cd = cd = Date.now() + [0,1000,3000,10000][r[pos] >> 6]
+		r[pos] = r[pos] ? (r[pos] >= 192 ? 192 + b : (r[pos] & 192) + 64 + b) : b
+		draws.push([x, y, r[pos]])
+	}else r[pos] = b
 	let ccx = (x - rx) * BLK + canvas.width / 2
 	let ccy = (ry - y) * BLK + canvas.height / 2 - BLK
-	if(ccx<0||ccy<0||ccx>=canvas.width||ccy>=canvas.height)return ob
+	if(ccx<0||ccy<0||ccx>=canvas.width||ccy>=canvas.height)return b
 	drawblock(x, y, ccx, ccy, r)
-	return ob
+	return r[pos]
 }
 function drawchunk(x, y, c = chunk(x, y)){
 	x |= 0
@@ -508,12 +529,16 @@ requestAnimationFrame(function f(){
 let awaitings = new Map()
 let seq = -1
 let lastSent = 0
+let float = document.querySelector('float')
+setInterval(()=>{
+	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.3'>"+IP+"</span>"
+},100)
 function update(){
 	if(IP)hash = location.hash = `#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`
 	if(!ws)return
 	if(!dragDown && touch == null){
-                if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
-                if(Math.abs(dy) / Math.abs(dx) < 0.3)dy = 0
+    if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
+    if(Math.abs(dy) / Math.abs(dx) < 0.3)dy = 0
 		cam.x += dx / ZOOM / BLK4
 		cam.y += dy / ZOOM / BLK4
 		if(fillOnMove)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
@@ -535,8 +560,9 @@ function update(){
 		}
 		ws.send(buf.toBuf())
 		draws = []
+		if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 	}
-  if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
+  
 }
 let lx = 0, ly = 0
 function move(){
@@ -549,9 +575,12 @@ function move(){
 let IP = "", hash = location.hash
 onhashchange = function(){if(hash != location.hash)location.reload()}
 let ws
-let [, a, x, y] = location.hash.split("#")
-if(a)wsinit(a, x, y)
-else document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+if(!hash)wsinit("server.canv.tk",0,0)
+else if(hash=="#home") document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+else{
+	let [, a, x, y] = hash.split("#")
+	if(a)wsinit(a, x, y)
+}
 function wsinit(a, x = 0, y = 0){
 	IP = a
 	x*=1; y*=1
@@ -562,7 +591,7 @@ function wsinit(a, x = 0, y = 0){
 	cy = y + 0.5
 	onresize()
 	document.getElementById('ip').style.display='none'
-	ws.onclose = () => location=location.pathname+location.search
+	ws.onclose = () => location.hash="home"
 	ws.onmessage = async function(e) {
 		document.getElementById('conn').style.display='none'
 		let buf = new Buf(await e.data.arrayBuffer())
@@ -585,6 +614,9 @@ function wsinit(a, x = 0, y = 0){
 			let i = buf.ushort()
 			for(let [x, y, b] of awaitings.get(i)){
 				set(x, y, b, false)
+			}
+			while(buf.i < buf.length){
+				set(buf.int(), buf.int(), buf.ubyte(), false)
 			}
 			awaitings.delete(i)
 		}
