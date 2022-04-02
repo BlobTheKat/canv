@@ -694,7 +694,8 @@ ontouchmove = e => {
 	tt !== null && (clearTimeout(tt), tt = null, canDot = false)
 	if(fillOnMove){
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
-		//set(Math.floor(cam.x), Math.floor(cam.y), PEN)
+		if(fillOnMove === true)set(Math.floor(cam.x), Math.floor(cam.y), PEN)
+                fillOnMove = 1
 	}else{
 		mv((touch.screenX - t.screenX) * 2, (t.screenY - touch.screenY) * 2)
 	}
