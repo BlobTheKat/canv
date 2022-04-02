@@ -340,12 +340,12 @@ function set(x, y, b, drw = true){
 	let pos = (yt<<6)+xt
 	if(!r)return 0
 	if((r[pos] & 63) == b)return r[pos]
-	if(cd > Date.now()){
-		float.style.color = "red"
-		setTimeout(() => float.style.color = "white", 1000)
-		return r[pos]
-	}
 	if(drw){
+		if(cd > Date.now()){
+			float.style.color = "#a22"
+			setTimeout(() => float.style.color = "white", 1000)
+			return r[pos]
+		}
 		b &= 63
 		localStorage.cd = cd = Date.now() + [0,1000,3000,10000][r[pos] >> 6]
 		r[pos] = r[pos] ? (r[pos] >= 192 ? 192 + b : (r[pos] & 192) + 64 + b) : b
