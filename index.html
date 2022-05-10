@@ -360,10 +360,10 @@ function set(x, y, b, drw = true){
 function drawchunk(x, y, c = chunk(x, y)){
 	x |= 0
 	y |= 0
-	let ccx0 = (x * 64 - rx) * BLK + canvas.width / 2
-	let ccy0 = (ry - y * 64 - 63) * BLK + canvas.height / 2 - BLK
-	let ccx1 = (x * 64 + 63 - rx) * BLK + canvas.width / 2
-	let ccy1 = (ry - y * 64) * BLK + canvas.height / 2 - BLK
+	let ccx0 = (x * 64 - rx >> 0) * BLK + canvas.width / 2
+	let ccy0 = (ry - y * 64 - 63 >> 0) * BLK + canvas.height / 2 - BLK
+	let ccx1 = (x * 64 + 63 - rx >> 0) * BLK + canvas.width / 2
+	let ccy1 = (ry - y * 64 >> 0) * BLK + canvas.height / 2 - BLK
 	if(ccx1<0||ccy1<0||ccx0>=canvas.width||ccy0>=canvas.height)return
 	x *= 64
 	y *= 64
@@ -371,14 +371,14 @@ function drawchunk(x, y, c = chunk(x, y)){
 	x -= (ccx0 - (ccx0 = Math.max(ccx0, 0))) / BLK
 	y += (ccy1 - (ccy1 = Math.min(ccy1, canvas.height - BLK))) / BLK
 	ccy0 = Math.max(ccy0, 0)
-	
+	x>>=0;y>>=0;
 	let resy = y
 	for(let cix = ccx0; cix <= ccx1; cix += BLK){
 		for(let ciy = ccy1; ciy >= ccy0; ciy -= BLK){
 			drawblock(x, y, cix, ciy, c)
-			y++
+			y=y+1>>0
 		}
-		x++
+		x=x+1>>0
 		y = resy
 	}
 }
