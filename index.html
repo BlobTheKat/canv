@@ -267,7 +267,7 @@
 		<div id="crossa"></div>
 		<div id="crossb"></div>
 		<btn id="pick" active onclick="if(PEN=='257')return this.style.background='',this.style.color='',selectcol(0);PEN='257';this.style.background='#aaa';this.style.color='#333'">⌖</btn>
-		<btn id="back" active onclick="location.hash='home'">&lt;</btn>
+		<btn id="back" active onclick="location.search='home'">&lt;</btn>
 		<btn id="in" active onclick="if(ZOOM<64)zoom(ZOOM / 1.5 % 1 ? ZOOM * 1.5 : ZOOM * 4 / 3)">+</btn>
 		<btn id="out" active onclick="let max = Math.max(innerWidth, innerHeight) / (Math.sqrt(map.size) - 1) / 128;let nw = ZOOM / 1.5 % 1 ? ZOOM / 4 * 3 : ZOOM / 1.5;if(nw > max)zoom(nw)">-</btn>
 		<float></float>
@@ -539,7 +539,7 @@ setInterval(()=>{
 	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
 },100)
 function update(){
-	try{if(IP)hash = location.hash = `#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`}catch(e){}
+	try{if(IP)history.replaceState(`?${IP}&${Math.floor(cam.x)}&${Math.floor(cam.y)}`,{},"Canv.tk")}catch(e){}
 	if(!ws)return
 	if(!dragDown && touch == null){
     if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
@@ -578,13 +578,12 @@ function move(){
 	buf.int(cy>>6)
 	ws.send(buf.toBuf())
 }
-let IP = "", hash = location.hash
-onhashchange = function(){if(hash != location.hash)location.reload()}
+let IP = "", hash = location.search
 let ws
 if(!hash)wsinit("server.canv.tk",0,0)
-else if(hash=="#home") document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
+else if(hash=="?home") document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
 else{
-	let [, a, x, y] = hash.split("#")
+	let [, a, x, y] = hash.split("&")
 	if(a)wsinit(a, x, y)
 }
 function wsinit(a, x = 0, y = 0){
@@ -592,7 +591,6 @@ function wsinit(a, x = 0, y = 0){
 	x*=1; y*=1
 	const pos = x === x && y === y
 	ws = new WebSocket('ws'+location.protocol.slice(4)+'//'+a+':1292' + (pos ? `/${lx = x>>6}/${ly = y>>6}` : ""));
-	hash = location.hash = "#" + a + (pos ? "#" + x + "#" + y : "")
 	cx = x + 0.5
 	cy = y + 0.5
 	onresize()
