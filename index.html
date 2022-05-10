@@ -384,7 +384,7 @@ function drawchunk(x, y, c = chunk(x, y)){
 }
 let cam = {
 	get x(){return cx},
-	set x(a){cx=a
+	set x(a){cx=(a>>0)+a%1
 		if(Math.abs(cx - rx) > canvas.width / BLK2 - innerWidth / BLK4 / ZOOM){
 			draw()
 		}
@@ -392,7 +392,7 @@ let cam = {
 		pos("x: "+Math.floor(cx)+", y: "+Math.floor(cy))
 	},
 	get y(){return cy},
-	set y(a){cy=a
+	set y(a){cy=(a>>0)+a%1
 		if(Math.abs(cy - ry) > canvas.height / BLK2 - innerHeight / BLK4 / ZOOM){
 			draw()
 		}
