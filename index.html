@@ -583,7 +583,7 @@ let ws
 if(!hash)wsinit("server.canv.tk",0,0)
 else if(hash=="?home") document.getElementById('ip').insertAdjacentHTML('beforeend', (localStorage.servers||"server.canv.tk").split('\n').map(a=>`<div class='server' onclick="wsinit(this.textContent)">${a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}</div>`).join(''))
 else{
-	let [, a, x, y] = hash.split("&")
+	let [a, x, y] = hash.slice(1).split("&")
 	if(a)wsinit(a, x, y)
 }
 function wsinit(a, x = 0, y = 0){
