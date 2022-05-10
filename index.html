@@ -539,7 +539,7 @@ setInterval(()=>{
 	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
 },100)
 function update(){
-	try{if(IP)hash=location.hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`}catch(e){}
+	try{hash!=location.hash&&location.reload();if(IP)hash=location.hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`}catch(e){}
 	if(!ws)return
 	if(!dragDown && touch == null){
     if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
@@ -589,7 +589,6 @@ else{
 function wsinit(a, x = 0, y = 0){
 	IP = a
 	x*=1; y*=1
-        onhashchange=e=>hash!=location.hash&&location.reload()
 	const pos = x === x && y === y
 	ws = new WebSocket('ws'+location.protocol.slice(4)+'//'+a+':1292' + (pos ? `/${lx = x>>6}/${ly = y>>6}` : ""));
 	cx = x + 0.5
