@@ -245,7 +245,7 @@
 		}
 	</style>
 </head>
-<body ontouchend="getSelection().removeAllRanges();event.preventDefault();if('value' in event.target)event.target.focus();let {clientX, clientY, screenX, screenY} = event.changedTouches[0];event.target.dispatchEvent(new MouseEvent('click', {bubbles:true,clientX,clientY,screenX,screenY))" onmousewheel="if(event.ctrlKey)event.preventDefault()">
+<body ontouchend="getSelection().removeAllRanges();event.preventDefault();if('value' in event.target)event.target.focus();let {clientX, clientY, screenX, screenY} = event.changedTouches[0];event.target.dispatchEvent(new MouseEvent('click', {bubbles:true,clientX,clientY,screenX,screenY}))" onmousewheel="if(event.ctrlKey)event.preventDefault()">
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
