@@ -245,7 +245,7 @@
 		}
 	</style>
 </head>
-<body ontouchstart="event.preventDefault()" ontouchmove="for(let t of event.changedTouches)tches.add(t.identifier)" ontouchend="event.preventDefault();if(!tches.has(event.changedTouches[0].identifier))event.target.click();for(let t of event.changedTouches)tches.delete(t.identifier)" >
+<body ontouchend="getSelection().removeAllRanges();event.preventDefault();if('value' in event.target)event.target.focus();event.target.dispatchEvent(new MouseEvent('click', event.changedTouches[0]))" onmousewheel="if(event.ctrlKey)event.preventDefault()">
 	<debug></debug>
 	<canvas></canvas>
 	<ui>
@@ -643,7 +643,7 @@ onmousedown = (e) => {
 	}
 }
 let canDot = false
-onmouseup = e => {dragDown = false;set2(e.clientX, e.clientY)}
+onmouseup = e => {dragDown = false;if(e.target!=ui)return;set2(e.clientX, e.clientY)}
 ontouchstart = e => {
 	if(e.target != ui)return
 	if(touch){
