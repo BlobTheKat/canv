@@ -538,8 +538,10 @@ let float = document.querySelector('float')
 setInterval(()=>{
 	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
 },100)
+setInterval(()=>{
+	try{hash!=location.hash&&location.reload();if(IP)hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`;history.replaceState({},'',hash)}catch(e){}
+}, 999)
 function update(){
-	try{hash!=location.hash&&location.reload();if(IP)hash=location.hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`}catch(e){}
 	if(!ws)return
 	if(!dragDown && touch == null){
     if(Math.abs(dx) / Math.abs(dy) < 0.3)dx = 0
