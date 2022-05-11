@@ -537,10 +537,8 @@ let lastSent = 0
 let float = document.querySelector('float')
 setInterval(()=>{
 	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
-},100)
-setInterval(()=>{
 	try{hash!=location.hash&&location.reload();if(IP)hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`;history.replaceState({},'',hash)}catch(e){}
-}, 999)
+},200)
 function update(){
 	if(!ws)return
 	if(!dragDown && touch == null){
