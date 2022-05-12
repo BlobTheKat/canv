@@ -347,7 +347,7 @@ function set(x, y, b, drw = true){
 			return r[pos]
 		}
 		b &= 63
-		localStorage.cd = cd = r[pos] == 0 ? Date.now() : Date.now() + [1000,3000,10000,20000][r[pos] >> 6]
+		localStorage.cd = cd = r[pos] == 0 ? Date.now() : Date.now() + [500,1000,2000,3000][r[pos] >> 6]
 		r[pos] = r[pos] ? (r[pos] >= 192 ? 192 + b : (r[pos] & 192) + 64 + b) : b
 		draws.push([x, y, r[pos]])
 	}else r[pos] = b
