@@ -717,7 +717,7 @@ function set2(clientX, clientY){
 	}
 	set(Math.floor(x), Math.floor(y), PEN)
 }
-addEventListener('mousewheel', e => (e.preventDefault(), e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined), {passive:false})
+addEventListener('wheel', e => (e.preventDefault(), e.target == ui ? mv(e.deltaX, -e.deltaY, false) : undefined), {passive:false})
 onkeypress = function(e){
 	if(+e.key){
 		selectcol(e.key-1)
