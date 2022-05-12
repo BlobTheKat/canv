@@ -536,7 +536,7 @@ let seq = -1
 let lastSent = 0
 let float = document.querySelector('float')
 setInterval(()=>{
-	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.1'>"+IP+"</span>"
+	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.2'>"+online+" online</span>"
 	try{hash!=location.hash&&location.reload();if(IP)hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`;history.replaceState({},'',hash)}catch(e){}
 },200)
 function update(){
@@ -570,7 +570,7 @@ function update(){
 		if(lx != (lx=cx>>6) || ly != (ly=cy>>6))move()
 	}
 }
-let lx = 0, ly = 0
+let lx = 0, ly = 0, online = '...'
 function move(){
 	let buf = new BufWriter()
 	buf.byte(2)
@@ -623,6 +623,8 @@ function wsinit(a, x = 0, y = 0){
 				set(buf.int(), buf.int(), buf.ubyte(), false)
 			}
 			awaitings.delete(i)
+		}else if(byte == 99){
+			online = buf.ushort()
 		}
 	}
 }
