@@ -708,12 +708,12 @@ onmousemove = function(e){
 		my = e.clientY
 		return
 	}
+	let dx = mx - (mx = e.clientX)
+	let dy = my - (my = e.clientY)
 	if(e.target != ui)return
 	if(dragDown){
 		dragDown = 1
-		let dx = mx - (mx = e.clientX)
-		let dy = my - (my = e.clientY)
-		mv(dx, -dy)
+		mv(2*dx, -2*dy)
 	}else if(dragDown === 0 && e.target == ui && PEN != 256){
 		//set2(e.clientX, e.clientY)
 	}
