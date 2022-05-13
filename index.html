@@ -633,17 +633,17 @@ let dragDown = false, touch = null, tt = null, fillOnMove = false
 oncontextmenu = e => e.preventDefault()
 onmousedown = (e) => {
 	if(e.target != ui)return
-	if(e.button == 2){
+	//if(e.button == 2){
 		dragDown = true
 		dx = dy = 0
 		return
-	}else if(e.target == ui && PEN != 256){
+	//}else if(e.target == ui && PEN != 256){
 		//set2(e.clientX, e.clientY)
-		dragDown = 0
-	}
+		//dragDown = 0
+	//}
 }
 let canDot = false
-onmouseup = e => {dragDown = false;if(e.target!=ui)return;set2(e.clientX, e.clientY)}
+onmouseup = e => {if(e.target!=ui)return dragDown = false;if(dragDown === true)set2(e.clientX, e.clientY);dragDown = false}
 ontouchstart = e => {
 	if(e.target != ui)return
 	if(touch){
@@ -701,10 +701,19 @@ ontouchmove = e => {
 	}
 	touch = t
 }
+let mx, my
 onmousemove = function(e){
+	if(+mx !== +mx){
+		mx = e.clientX
+		my = e.clientY
+		return
+	}
 	if(e.target != ui)return
 	if(dragDown){
-		mv(-e.movementX*2/devicePixelRatio, e.movementY*2/devicePixelRatio)
+		dragDown = 1
+		let dx = mx - (mx = e.clientX)
+		let dy = my - (my = e.clientY)
+		mv(dx, -dy)
 	}else if(dragDown === 0 && e.target == ui && PEN != 256){
 		//set2(e.clientX, e.clientY)
 	}
