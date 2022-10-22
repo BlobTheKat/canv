@@ -537,7 +537,7 @@ let lastSent = 0
 let float = document.querySelector('float')
 setInterval(()=>{
 	float.innerHTML = cd > Date.now() ? "cooldown: " + Math.ceil(cd/1000-Date.now()/1000) + "s" : "<span style='opacity:0.2'>"+online+" online</span>"
-	try{hash!=location.hash&&location.reload();if(IP)hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`;history.replaceState({},'',hash)}catch(e){}
+	try{hash!=location.hash&&1;if(IP)hash=`#${IP}#${Math.floor(cam.x)}#${Math.floor(cam.y)}`;history.replaceState({},'',hash)}catch(e){}
 },200)
 function update(){
 	if(!ws)return
@@ -595,7 +595,7 @@ function wsinit(a, x = 0, y = 0){
 	cy = y + 0.5
 	onresize()
 	document.getElementById('ip').style.display='none'
-	ws.onclose = () => location.reload()
+	ws.onclose = () => (alert('Connection lost'),location.reload())
 	ws.onmessage = async function(e) {
 		document.getElementById('conn').style.display='none'
 		let buf = new Buf(await e.data.arrayBuffer())
